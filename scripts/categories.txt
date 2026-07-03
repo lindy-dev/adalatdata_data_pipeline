@@ -1,0 +1,11 @@
+procedural: 840
+administrative: 511
+criminal: 455
+constitutional: 346
+civil: 294
+property: 194
+tax: 159
+corporate: 106
+other: 70
+family: 46
+environmental: 20
