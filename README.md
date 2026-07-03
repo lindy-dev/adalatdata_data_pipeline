@@ -177,18 +177,151 @@ uv run python ingest.py \
 
 ### Natural Language Queries
 
-Generate and optionally execute Cypher queries from natural language questions:
+Generate and optionally execute Cypher queries from natural language questions. The schema is auto-discovered from the AGE graph, and relationship directions are provided to the LLM so it generates correct traversal directions.
 
 ```bash
 # Generate Cypher only
-uv run python nlq.py "What judgments did Justice XYZ deliver in 2016?"
+uv run python nlq.py "How many judgments are in the database?"
 
 # Generate and execute
-uv run python nlq.py "What judgments did Justice XYZ deliver in 2016?" --execute
+uv run python nlq.py "How many judgments are in the database?" --execute
 
 # Custom LLM
 uv run python nlq.py "..." --llm-model your-model --llm-base-url http://localhost:8080/v1
 ```
+
+**Example queries and output:**
+
+_Count total judgments:_
+
+```bash
+uv run python nlq.py "How many judgments are in the database?" --execute
+```
+
+```
++----------------+
+| judgment_count |
++----------------+
+| 589            |
++----------------+
+1 row(s)
+```
+
+_Top judges by judgment count:_
+
+```bash
+uv run python nlq.py "Show me judges and their judgment count" --execute
+```
+
+```
++-----------------------+----------+
+| ju.name               | COUNT(j) |
++-----------------------+----------+
+| Dipak Misra           | 104      |
+| T. S. Thakur          | 81       |
+| Rohinton F. Nariman   | 74       |
+| A. K. Sikri           | 74       |
+| Kurian Joseph         | 68       |
+...
+```
+
+_Most cited legal sections:_
+
+```bash
+uv run python nlq.py "What legal sections are cited most often? Show top 10" --execute
+```
+
+```
++----------------------------+-------------+----------+
+| js.act                     | js.section  | COUNT(j) |
++----------------------------+-------------+----------+
+| Indian Penal Code          | 302         | 57       |
+| Constitution of India      | Article 32  | 36       |
+| Indian Penal Code          | 34          | 35       |
+| Constitution of India      | Article 14  | 31       |
+| Constitution of India      | Article 136 | 24       |
+...
+```
+
+_Judgments with parties:_
+
+```bash
+uv run python nlq.py "Show me 5 judgments and the parties involved" --execute
+```
+
+```
++-----------------------------------------------------------------------+--------+---------------------------------------------------------------------------------------------------------+
+| j.case_title                                                          | j.year | parties                                                                                                 |
++-----------------------------------------------------------------------+--------+---------------------------------------------------------------------------------------------------------+
+| Krishna Kumar Singh & Anr. v. State of Bihar & Ors.                   | 2017   | ["Krishna Kumar Singh & Anr.", "State of Bihar & Ors."]                                                 |
+| KAIL LTD. V. STATE OF KERALA                                         | 2016   | ["KAIL Ltd.", "State of Kerala"]                                                                        |
+| State of Karnataka v. Larsen & Toubro Limited                        | 2016   | ["Larsen & Toubro Limited", "State of Karnataka"]                                                       |
+...
+```
+
+_Filter judgments by year:_
+
+```bash
+uv run python nlq.py "Show judgments from 2016 with title and year" --execute
+```
+
+```
++-------------------------------------------------------------------------------------+--------+
+| j.case_title                                                                        | j.year |
++-------------------------------------------------------------------------------------+--------+
+| GOVT. OF NCT OF DELHI AND ANR. V. ANAND ARYA AND ORS.                               | 2016   |
+| GOA FOUNDATION & ANR. v. STATE OF GOA & ANR.                                        | 2016   |
+| Bobbili Ramakrishna Raju Yadav & Ors. v. State of Andhra Pradesh                    | 2016   |
+...
+```
+
+_All judges who delivered judgments:_
+
+```bash
+uv run python nlq.py "List all judges who delivered judgments" --execute
+```
+
+```
++---------------------------------+
+| j.name                          |
++---------------------------------+
+| Abhay Manohar Sapre             |
+| Adarsh Kumar Goel               |
+| A. K. Misra                     |
+...
+```
+
+_Judgments delivered by a specific judge:_
+
+```bash
+uv run python nlq.py "Show judgments delivered by Rohinton F. Nariman" --execute
+```
+
+_Judgments citing a specific legal section:_
+
+```bash
+uv run python nlq.py "Show judgments that cite Section 302 of the Indian Penal Code" --execute
+```
+
+_Top keywords used across judgments:_
+
+```bash
+uv run python nlq.py "Show the top 10 keywords and their usage count" --execute
+```
+
+_Judgments with their keywords:_
+
+```bash
+uv run python nlq.py "Show 3 judgments and their associated keywords" --execute
+```
+
+_Count judgments per year:_
+
+```bash
+uv run python nlq.py "How many judgments were delivered in each year?" --execute
+```
+
+The LLM generates Cypher dynamically from the auto-discovered schema. The current dataset covers 589 judgments from 2016 (plus a few 2017 spill-overs), 34 judges, and 4 relationship types (DELIVERED_BY, INVOLVES_PARTY, CITES_SECTION, HAS_KEYWORD).
 
 ### Full pipeline for all years
 
